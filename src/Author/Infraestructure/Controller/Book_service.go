@@ -2,20 +2,24 @@ package controller
 
 import (
 	application "Event/src/Author/Application"
- 	entities "Event/src/Author/Domain/Entities"
-    "net/http"
+	services "Event/src/Author/Application/Services"
+	entities "Event/src/Author/Domain/Entities"
+	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin" 
+	"github.com/gin-gonic/gin"
 )
 
 
 type AuthorController struct {
 	service *application.AuthorService
+    eventService *services.EventService
 }
 
-func NewAuthorController(service *application.AuthorService) *AuthorController {
-	return &AuthorController{service: service}
+
+func NewAuthorController(service *application.AuthorService, eventService *services.EventService) *AuthorController {
+	return &AuthorController{service: service,
+	eventService: eventService,}
 }
 
 // Crear un autor
@@ -63,32 +67,40 @@ func (c *AuthorController) GetAuthorByID(ctx *gin.Context) {
 }
 
 
-// Actualizar un autor
+// UpdateAuthor maneja la actualización de un autor y emite un evento.
 func (c *AuthorController) UpdateAuthor(ctx *gin.Context) {
-    id := ctx.Param("id") 
-    authorID, err := strconv.Atoi(id) 
-    if err != nil {
-        ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
-        return
-    }
+	id := ctx.Param("id")
+	authorID, err := strconv.Atoi(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		return
+	}
 
-    var author entities.Author
-    if err := ctx.ShouldBindJSON(&author); err != nil {
-        ctx.JSON(http.StatusBadRequest, gin.H{"error": "Entrada inválida"})
-        return
-    }
+	var author entities.Author
+	if err := ctx.ShouldBindJSON(&author); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Entrada inválida"})
+		return
+	}
 
-    author.ID = authorID
+	author.ID = authorID
 
-     err = c.service.UpdateAuthor(&author)
-    if err != nil {
-        ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
-    }
+	// Actualizamos el autor
+	err = c.service.UpdateAuthor(&author)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
-    ctx.JSON(http.StatusOK, gin.H{"message": "Autor actualizado"})
+	// Emitimos el evento de que el autor ha sido actualizado
+	err = c.eventService.AuthorUpdated(&author)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Error al emitir el evento AuthorUpdated"})
+		return
+	}
+
+	// Responder con éxito
+	ctx.JSON(http.StatusOK, gin.H{"message": "Autor actualizado y evento emitido"})
 }
-
 
 
 // Eliminar un autor

@@ -7,14 +7,12 @@ import (
 	"fmt"
 )
 
-
-
 type MySQLAuthorRepository struct {
 	db *sql.DB
 }
 
 func NewsqlAuthorRepository(db *sql.DB) repositories.AuthorRepository {
-	return &MySQLAuthorRepository{db: db} 
+	return &MySQLAuthorRepository{db: db}
 }
 
 // CreateAuthor guarda un nuevo autor en la base de datos.
@@ -36,23 +34,22 @@ func (m *MySQLAuthorRepository) GetAuthorByID(id int16) (*entities.Author, error
 
 // UpdateAuthor actualiza la información de un autor en la base de datos.
 func (m *MySQLAuthorRepository) UpdateAuthor(author *entities.Author) error {
-    
-    result, err := m.db.Exec("UPDATE authors SET name = ?, email = ? WHERE id = ?", author.Name, author.Email, author.ID)
-    if err != nil {
-        return fmt.Errorf("error al actualizar el autor: %v", err)
-    }
 
-  
-    rowsAffected, err := result.RowsAffected()
-    if err != nil {
-        return fmt.Errorf("error al obtener filas afectadas: %v", err)
-    }
+	result, err := m.db.Exec("UPDATE authors SET name = ?, email = ? WHERE id = ?", author.Name, author.Email, author.ID)
+	if err != nil {
+		return fmt.Errorf("error al actualizar el autor: %v", err)
+	}
 
-    if rowsAffected == 0 {
-        return fmt.Errorf("ningún autor encontrado con el ID %d", author.ID)
-    }
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("error al obtener filas afectadas: %v", err)
+	}
 
-    return nil
+	if rowsAffected == 0 {
+		return fmt.Errorf("ningún autor encontrado con el ID %d", author.ID)
+	}
+
+	return nil
 }
 
 // GetAllAuthor obtiene todos los autores desde la base de datos.
